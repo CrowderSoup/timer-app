@@ -1,3 +1,62 @@
+// Stopwatch class
+class Stopwatch {
+    constructor() {
+        this.isRunning = false;
+        this.startTime = 0;
+        this.elapsedTime = 0;
+        this.interval = null;
+
+        this.display = document.getElementById('stopwatch-display');
+        this.startBtn = document.getElementById('stopwatch-start-btn');
+        this.stopBtn = document.getElementById('stopwatch-stop-btn');
+        this.resetBtn = document.getElementById('stopwatch-reset-btn');
+
+        this.startBtn.addEventListener('click', () => this.start());
+        this.stopBtn.addEventListener('click', () => this.stop());
+        this.resetBtn.addEventListener('click', () => this.reset());
+    }
+
+    start() {
+        if (this.isRunning) return;
+        this.isRunning = true;
+        this.startTime = Date.now() - this.elapsedTime;
+        this.interval = setInterval(() => this.update(), 10);
+        this.updateButtons();
+    }
+
+    stop() {
+        if (!this.isRunning) return;
+        this.isRunning = false;
+        this.elapsedTime = Date.now() - this.startTime;
+        clearInterval(this.interval);
+        this.updateButtons();
+    }
+
+    reset() {
+        this.stop();
+        this.elapsedTime = 0;
+        this.display.textContent = '00:00:00';
+        this.updateButtons();
+    }
+
+    update() {
+        const elapsedTime = Date.now() - this.startTime;
+        const totalSeconds = Math.floor(elapsedTime / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const milliseconds = Math.floor((elapsedTime % 1000) / 10);
+
+        this.display.textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+    }
+
+    updateButtons() {
+        this.startBtn.disabled = this.isRunning;
+        this.stopBtn.disabled = !this.isRunning;
+    }
+}
+
 // Timer class to handle individual timer functionality
 class Timer {
   constructor(id, label = "Timer", hours = 0, minutes = 5, seconds = 0) {
@@ -423,6 +482,7 @@ class TimerManager {
 // Initialize the timer manager when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   window.timerAppManager = new TimerManager();
+  new Stopwatch();
 
   // Set up periodic save to ensure timer states are saved regularly
   setInterval(() => {

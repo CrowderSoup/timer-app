@@ -1,19 +1,15 @@
 // Stopwatch class
 class Stopwatch {
-    constructor() {
+    constructor(id, label = "Stopwatch") {
+        this.id = id;
+        this.label = label;
         this.isRunning = false;
         this.startTime = 0;
         this.elapsedTime = 0;
         this.interval = null;
+        this.editingLabel = false;
 
-        this.display = document.getElementById('stopwatch-display');
-        this.startBtn = document.getElementById('stopwatch-start-btn');
-        this.stopBtn = document.getElementById('stopwatch-stop-btn');
-        this.resetBtn = document.getElementById('stopwatch-reset-btn');
-
-        this.startBtn.addEventListener('click', () => this.start());
-        this.stopBtn.addEventListener('click', () => this.stop());
-        this.resetBtn.addEventListener('click', () => this.reset());
+        // DOM elements will be accessed via render method
     }
 
     start() {
@@ -35,25 +31,72 @@ class Stopwatch {
     reset() {
         this.stop();
         this.elapsedTime = 0;
-        this.display.textContent = '00:00:00';
+        this.display.textContent = '00:00:00.00';
         this.updateButtons();
     }
 
     update() {
-        const elapsedTime = Date.now() - this.startTime;
+        const elapsedTime = this.isRunning ? (Date.now() - this.startTime) : this.elapsedTime;
         const totalSeconds = Math.floor(elapsedTime / 1000);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
         const milliseconds = Math.floor((elapsedTime % 1000) / 10);
 
-        this.display.textContent = 
+        this.display.textContent =
             `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
     }
 
     updateButtons() {
         this.startBtn.disabled = this.isRunning;
         this.stopBtn.disabled = !this.isRunning;
+    }
+
+    updateLabel(newLabel) {
+        this.label = newLabel;
+        const labelElement = document.getElementById(`stopwatch-label-${this.id}`);
+        if (labelElement) {
+            labelElement.textContent = newLabel;
+        }
+    }
+
+    toggleLabelEdit() {
+        this.editingLabel = !this.editingLabel;
+        const labelContainer = document.getElementById(`stopwatch-label-container-${this.id}`);
+
+        if (this.editingLabel) {
+            labelContainer.innerHTML = `
+                <button class="save-label-btn" id="save-stopwatch-label-btn-${this.id}">💾</button>
+                <input type="text" id="stopwatch-label-input-${this.id}" class="timer-label-input" value="${this.label}">
+            `;
+
+            document.getElementById(`save-stopwatch-label-btn-${this.id}`).addEventListener('click', () => {
+                const newLabel = document.getElementById(`stopwatch-label-input-${this.id}`).value.trim();
+                if (newLabel) {
+                    this.updateLabel(newLabel);
+                }
+                this.toggleLabelEdit();
+            });
+        } else {
+            labelContainer.innerHTML = `
+                <button class="edit-label-btn" id="edit-stopwatch-label-btn-${this.id}">✏️</button>
+                <div class="timer-label" id="stopwatch-label-${this.id}">${this.label}</div>
+            `;
+
+            document.getElementById(`edit-stopwatch-label-btn-${this.id}`).addEventListener('click', () => {
+                this.toggleLabelEdit();
+            });
+        }
+    }
+
+    toJSON() {
+        return {
+            id: this.id,
+            label: this.label,
+            elapsedTime: this.elapsedTime,
+            isRunning: this.isRunning,
+            startTime: this.startTime
+        };
     }
 }
 
@@ -479,15 +522,179 @@ class TimerManager {
   }
 }
 
+// StopwatchManager class to handle multiple stopwatches
+class StopwatchManager {
+    constructor() {
+        this.stopwatches = [];
+        this.nextId = 1;
+        this.loadFromLocalStorage();
+
+        document.getElementById('addStopwatchBtn').addEventListener('click', () => {
+            this.addStopwatch();
+        });
+
+        window.addEventListener('beforeunload', () => {
+            this.saveToLocalStorage();
+        });
+    }
+
+    addStopwatch(label, elapsedTime = 0, isRunning, startTime) {
+        const id = this.nextId++;
+        const stopwatch = new Stopwatch(id, label || `Stopwatch ${id}`);
+        
+        if (elapsedTime) {
+            stopwatch.elapsedTime = elapsedTime;
+        }
+        
+        if (isRunning) {
+            stopwatch.isRunning = isRunning;
+            stopwatch.startTime = startTime;
+        }
+
+        this.stopwatches.push(stopwatch);
+        this.renderStopwatch(stopwatch);
+        this.saveToLocalStorage();
+        
+        if (stopwatch.isRunning) {
+            stopwatch.start();
+        }
+
+        return stopwatch;
+    }
+
+    deleteStopwatch(id) {
+        const index = this.stopwatches.findIndex(sw => sw.id === id);
+        if (index !== -1) {
+            this.stopwatches[index].stop();
+            this.stopwatches.splice(index, 1);
+            const stopwatchElement = document.getElementById(`stopwatch-card-${id}`);
+            if (stopwatchElement) {
+                stopwatchElement.remove();
+            }
+            this.saveToLocalStorage();
+        }
+    }
+
+    renderStopwatch(stopwatch) {
+        const container = document.getElementById('stopwatches-container');
+        const card = document.createElement('div');
+        card.id = `stopwatch-card-${stopwatch.id}`;
+        card.className = 'timer-card'; // Reuse timer-card styles
+
+        card.innerHTML = `
+            <div class="timer-header">
+                <div id="stopwatch-label-container-${stopwatch.id}" style="display: flex; align-items: center;">
+                    <button class="edit-label-btn" id="edit-stopwatch-label-btn-${stopwatch.id}">✏️</button>
+                    <div class="timer-label" id="stopwatch-label-${stopwatch.id}">${stopwatch.label}</div>
+                </div>
+                <button class="btn-delete" id="delete-stopwatch-btn-${stopwatch.id}">✕</button>
+            </div>
+            <div class="timer-display" id="stopwatch-display-${stopwatch.id}">00:00:00.00</div>
+            <div class="button-group">
+                <button class="btn-start" id="stopwatch-start-btn-${stopwatch.id}">Start</button>
+                <button class="btn-stop" id="stopwatch-stop-btn-${stopwatch.id}" disabled>Stop</button>
+                <button class="btn-reset" id="stopwatch-reset-btn-${stopwatch.id}">Reset</button>
+            </div>
+        `;
+
+        container.appendChild(card);
+
+        stopwatch.display = document.getElementById(`stopwatch-display-${stopwatch.id}`);
+        stopwatch.startBtn = document.getElementById(`stopwatch-start-btn-${stopwatch.id}`);
+        stopwatch.stopBtn = document.getElementById(`stopwatch-stop-btn-${stopwatch.id}`);
+        stopwatch.resetBtn = document.getElementById(`stopwatch-reset-btn-${stopwatch.id}`);
+
+        stopwatch.startBtn.addEventListener('click', () => stopwatch.start());
+        stopwatch.stopBtn.addEventListener('click', () => stopwatch.stop());
+        stopwatch.resetBtn.addEventListener('click', () => stopwatch.reset());
+        document.getElementById(`delete-stopwatch-btn-${stopwatch.id}`).addEventListener('click', () => this.deleteStopwatch(stopwatch.id));
+        document.getElementById(`edit-stopwatch-label-btn-${stopwatch.id}`).addEventListener('click', () => stopwatch.toggleLabelEdit());
+        
+        stopwatch.update();
+        stopwatch.updateButtons();
+    }
+
+    saveToLocalStorage() {
+        const stopwatchesData = this.stopwatches.map(sw => sw.toJSON());
+        localStorage.setItem('stopwatches', JSON.stringify(stopwatchesData));
+        localStorage.setItem('nextStopwatchId', this.nextId.toString());
+    }
+
+    loadFromLocalStorage() {
+        try {
+            const stopwatchesData = localStorage.getItem('stopwatches');
+            const nextIdStr = localStorage.getItem('nextStopwatchId');
+
+            if (stopwatchesData) {
+                const parsedData = JSON.parse(stopwatchesData);
+                if (Array.isArray(parsedData)) {
+                    parsedData.forEach(data => {
+                        this.addStopwatch(data.label, data.elapsedTime, data.isRunning, data.startTime);
+                    });
+                }
+            }
+
+            if (nextIdStr) {
+                this.nextId = parseInt(nextIdStr, 10);
+            }
+
+            if (this.stopwatches.length === 0) {
+                this.addStopwatch();
+            }
+        } catch (error) {
+            console.error('Error loading stopwatches from localStorage:', error);
+            this.addStopwatch();
+        }
+    }
+}
+
 // Initialize the timer manager when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   window.timerAppManager = new TimerManager();
-  new Stopwatch();
+  window.stopwatchManager = new StopwatchManager();
 
   // Set up periodic save to ensure timer states are saved regularly
   setInterval(() => {
     if (window.timerAppManager) {
       window.timerAppManager.saveToLocalStorage();
     }
+    if (window.stopwatchManager) {
+        window.stopwatchManager.saveToLocalStorage();
+    }
   }, 5000); // Save every 5 seconds
+
+  const savedTab = localStorage.getItem('activeTab');
+  if (savedTab) {
+    openTab(null, savedTab);
+  } else {
+    // If no tab is saved, open the first tab by default
+    openTab(null, 'timers');
+  }
 });
+
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tab-content");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tab-link");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+
+  // Find the button that corresponds to the tabName and add 'active' class
+  for (i = 0; i < tablinks.length; i++) {
+    if (tablinks[i].getAttribute('onclick').includes(`'${tabName}'`)) {
+      tablinks[i].className += " active";
+      break;
+    }
+  }
+
+  if (evt) {
+    evt.currentTarget.className += " active";
+  }
+  
+  localStorage.setItem('activeTab', tabName);
+}

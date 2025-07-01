@@ -13,21 +13,24 @@
             <h1>⏰ Timer App</h1>
         </header>
 
-        <div class="stopwatch-container">
-            <h2>Stopwatch</h2>
-            <div class="stopwatch-display" id="stopwatch-display">00:00:00</div>
-            <div class="button-group">
-                <button class="btn-start" id="stopwatch-start-btn">Start</button>
-                <button class="btn-stop" id="stopwatch-stop-btn" disabled>Stop</button>
-                <button class="btn-reset" id="stopwatch-reset-btn">Reset</button>
+        <div class="tabs">
+            <button class="tab-link active" onclick="openTab(event, 'timers')">Timers</button>
+            <button class="tab-link" onclick="openTab(event, 'stopwatch')">Stopwatch</button>
+        </div>
+
+        <div id="timers" class="tab-content" style="display: block;">
+            <div id="timers-container">
+                <!-- Timer cards will be dynamically added here -->
             </div>
+            <button class="add-timer-btn" id="addTimerBtn">+ Add New Timer</button>
         </div>
-        
-        <div id="timers-container">
-            <!-- Timer cards will be dynamically added here -->
+
+        <div id="stopwatch" class="tab-content">
+            <div id="stopwatches-container">
+                <!-- Stopwatch cards will be dynamically added here -->
+            </div>
+            <button class="add-timer-btn" id="addStopwatchBtn">+ Add New Stopwatch</button>
         </div>
-        
-        <button class="add-timer-btn" id="addTimerBtn">+ Add New Timer</button>
     </div>
 
     <audio id="alarmSound" src="https://cdnjs.cloudflare.com/ajax/libs/ion-sound/3.0.7/sounds/bell_ring.mp3" preload="auto"></audio>

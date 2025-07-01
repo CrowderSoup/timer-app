@@ -19,20 +19,7 @@ header {
   margin-bottom: 20px;
 }
 
-.stopwatch-container {
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    text-align: center;
-}
 
-.stopwatch-display {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
 
 h1 {
   color: #2c3e50;
@@ -184,6 +171,35 @@ button:disabled {
 .save-label-btn:hover {
   background-color: #f39c12;
 }
+
+/* Tabs styling */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 20px;
+}
+.tab-link {
+  background-color: #f1f1f1;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+  border-radius: 8px 8px 0 0;
+}
+.tab-link:hover {
+  background-color: #ddd;
+}
+.tab-link.active {
+  background-color: #ccc;
+}
+.tab-content {
+  display: none;
+  padding: 6px 12px;
+  border-top: none;
+}
+
 @media (max-width: 600px) {
   .time-inputs {
     flex-wrap: wrap;

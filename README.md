@@ -6,6 +6,7 @@ The app lets you add and delete timers. Rename them. Start / stop them. It saves
 
 Why not just use an existing timer app? Because I'm a weirdo, I guess?
 
-## Screenshot
+## Screenshots
 
-![Screenshot](./screenshot.png)
+![Timers](./Timers.png)
+![Stopwatches](./Stopwatches.png)
